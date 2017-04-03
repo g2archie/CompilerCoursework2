@@ -46,13 +46,13 @@ public class ConstantFolder
         InstructionHandle handle = list.getStart();
 
         while (handle != null){
-            if (handle.getInstruction() instanceof ){
+            if (handle.getInstruction() instanceof ArithmeticInstruction){
 
-            }else if(handle.getInstruction() instanceof ){
+            }else if(handle.getInstruction() instanceof StoreInstruction){
 
-            }else if(handle.getInstruction() instanceof ){
+            }else if(handle.getInstruction() instanceof IINC){
 
-            }else if(handle.getInstruction() instanceof ){
+            }else if(handle.getInstruction() instanceof NOP){
 
             }else{
 
