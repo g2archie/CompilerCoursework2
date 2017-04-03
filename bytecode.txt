@@ -1,0 +1,68 @@
+methodOne();
+  	 0: bipush        42
+         2: istore_1
+         3: bipush        8
+         5: istore_2
+         6: bipush        8
+         8: istore_3
+         9: bipush        8
+        11: istore        4
+        13: bipush        8
+        15: istore        5
+        17: bipush        8
+        19: istore        6
+        21: iload_1
+        22: sipush        764
+        25: iadd
+        26: iconst_3
+        27: imul
+        28: istore        7
+        30: iload         7
+        32: sipush        1234
+        35: iadd
+        36: iload_1
+        37: isub
+        38: ireturn
+
+methodTwo();
+ 	 0: dconst_0
+         1: dstore_1
+         2: iconst_1
+         3: istore_3
+         4: dload_1
+         5: iload_3
+         6: i2d
+         7: dadd
+         8: dreturn
+
+methodThree();
+  	 0: sipush        12345
+         3: istore_1
+         4: ldc           #2                  // int 54321
+         6: istore_2
+         7: iload_1
+         8: iload_2
+         9: if_icmple     16
+        12: iconst_1
+        13: goto          17
+        16: iconst_0
+        17: return
+
+compiled：
+
+methodOne();
+ 	 0: ldc           #24                 // int 3610
+         2: ireturn
+
+methodTwo();
+ 	 0: ldc2_w        #27                 // double 1.0d
+         3: dreturn
+
+methodThree()byb;
+	 0: sipush        12345
+         3: ldc           #2                  // int 54321
+         5: if_icmple     12
+         8: iconst_1
+         9: goto          13
+        12: iconst_0
+        13: ireturn
