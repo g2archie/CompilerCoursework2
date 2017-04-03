@@ -37,17 +37,49 @@ public class ConstantFolder
 			e.printStackTrace();
 		}
 	}
-	
+
+	//main structure
+    private optimizedMethod(ClassGen cgen, ConstantPoolGen cpgen, Method m){
+        Code code = m.getCode();
+        InstructionList list = new InstructionList(code.getCode());
+        MethodGen mg = new MethodGen(m.getAccessFlags(), m.getReturnType(), m.getArgumentTypes(), null, m.getName(), cgen.getClassName(), list, cpgen);
+        InstructionHandle handle = list.getStart();
+
+        while (handle != null){
+            if (handle.getInstruction() instanceof ){
+
+            }else if(handle.getInstruction() instanceof ){
+
+            }else if(handle.getInstruction() instanceof ){
+
+            }else if(handle.getInstruction() instanceof ){
+
+            }else{
+
+            }
+        }
+
+        Method myMethod = mg.getMethod();
+        Code myCode = myMethod.getCode();
+        InstructionList myList = new InstructionList(myCode.getCode());
+        cgen.replaceMethod(m, myMethod);
+    }
+
+
+    //optimize all methods
 	public void optimize()
 	{
 		ClassGen cgen = new ClassGen(original);
 		ConstantPoolGen cpgen = cgen.getConstantPool();
 
 		// Implement your optimization here
-        
+        Method[] methods = cgen.getMethods();
+        for (Method m: methods){
+        	optimizedMethod(cgen, cpgen, m);
+		}
+
 		this.optimized = gen.getJavaClass();
 	}
-
 	
 	public void write(String optimisedFilePath)
 	{

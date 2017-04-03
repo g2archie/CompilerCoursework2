@@ -59,7 +59,7 @@ methodTwo();
  	 0: ldc2_w        #27                 // double 1.0d
          3: dreturn
 
-methodThree()byb;
+methodThree();
 	 0: sipush        12345
          3: ldc           #2                  // int 54321
          5: if_icmple     12
@@ -127,3 +127,33 @@ methodFour();
         20: goto          24
         23: iconst_0
         24: ireturn
+
+//part2里面的methods和之间的关联
+void optimizeMethod(); => safeInstructionDelete
+		       => handleStoreInstructions
+		       => getLastStaskPush
+
+Number getLastStackPush(); => safeInstructionDelete
+			   => binaryOps
+			   => convertNumber
+			   => stackChangingOp
+
+Number[] binaryOps(); => getLastStackPush
+Boolean handleStoreInstuctions(); 
+Number convertNumber();
+Boolean stackChangingOp();
+Void safeInstructionDelete();
+
+
+storeInstruction
+NOP
+ArithmeticInstruction
+IINC
+
+Load and store (e.g. aload_0, istore)
+Arithmetic and logic (e.g. ladd, fcmpl)
+Type conversion (e.g. i2b, d2i)
+Object creation and manipulation (new, putfield)
+Operand stack management (e.g. swap, dup2)
+Control transfer (e.g. ifeq, goto)
+Method invocation and return (e.g. invokespecial, areturn)
