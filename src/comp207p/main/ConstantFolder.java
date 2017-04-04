@@ -5,17 +5,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.apache.bcel.classfile.ClassParser;
-import org.apache.bcel.classfile.Code;
-import org.apache.bcel.classfile.JavaClass;
-import org.apache.bcel.classfile.Method;
-import org.apache.bcel.generic.ClassGen;
-import org.apache.bcel.generic.ConstantPoolGen;
-import org.apache.bcel.generic.InstructionHandle;
-import org.apache.bcel.generic.InstructionList;
+import org.apache.bcel.classfile.*;
+import org.apache.bcel.generic.*;
 import org.apache.bcel.util.InstructionFinder;
-import org.apache.bcel.generic.MethodGen;
-import org.apache.bcel.generic.TargetLostException;
+
 
 
 
@@ -39,7 +32,7 @@ public class ConstantFolder
 	}
 
 	//main structure
-    private optimizedMethod(ClassGen cgen, ConstantPoolGen cpgen, Method m){
+    private void optimizedMethod(ClassGen cgen, ConstantPoolGen cpgen, Method m){
         Code code = m.getCode();
         InstructionList list = new InstructionList(code.getCode());
         MethodGen mg = new MethodGen(m.getAccessFlags(), m.getReturnType(), m.getArgumentTypes(), null, m.getName(), cgen.getClassName(), list, cpgen);
@@ -53,24 +46,28 @@ public class ConstantFolder
             //ldc2_w (long and double)
 
             if (handle.getInstruction() instanceof ArithmeticInstruction){
-            //u如果找到unary或者binary运算字节码，则运算出结果
+            //******如果找到unary或者binary运算字节码，则运算出结果
             InstructionHandle change = handle;
             handle = handle.getNext();
 
 
             }else if(handle.getInstruction() instanceof StoreInstruction){
-                //如果找到store相关的字节码，则往后找相应的load字节码，并且把load替换成push,把之前的store和push删掉
+                //******如果找到store相关的字节码，则往后找相应的load字节码，并且把load替换成push,把之前的store和push删掉
+                InstructionHandle change = handle;
+                handle = handle.getNext();
 
             }else if(handle.getInstruction() instanceof IINC){
-                //如果遇到增量字节码，则转换成普通的字节码（iinc，iinc_w）
-
+                //********如果遇到增量字节码，则转换成普通的字节码（iinc，iinc_w）
+                InstructionHandle change = handle;
+                handle = handle.getNext();
 
             }else{
-                //向下遍历
+                //*********向下遍历
+                InstructionHandle change = handle;
+                handle = handle.getNext();
             }
         }
 
-        //？？怎么替换的
         list.setPositions(true);
         mg.setMaxStack();
         mg.setMaxLocals();
@@ -79,12 +76,52 @@ public class ConstantFolder
     }
 
     private Number getValue(InstructionList list, InstructionHandle handle){
-         if (handle.getInstruction() instanceof BIPUSH){
-             Number value = ((BIPUSH) handle.getInstruction()).getValue();
-         }
+        InstructionHandle myHandle = handle;
+
+        //get values from bipush, sipush, ldc and ldc2_w
+        //get values from integer, float, long and double constant
+        //get values from integer add, mul, div and sub
+        if (myHandle.getInstruction() instanceof BIPUSH){
+             Number value = ((BIPUSH) myHandle.getInstruction()).getValue();
+             deleteInstruction(list, myHandle);
+             return value;
+        }else if (myHandle.getInstruction() instanceof SIPUSH){
+             Number value = ((SIPUSH) myHandle.getInstruction()).getValue();
+             deleteInstruction(list, myHandle);
+             return value;
+        }else if (myHandle.getInstruction() instanceof LDC){
+             Number value = ((LDC) myHandle.getInstruction()).getValue();
+             deleteInstruction(list, myHandle);
+             return value;
+        }else if (myHandle.getInstruction() instanceof LDC2_W){
+             Number value = ((LDC2_W) myHandle.getInstruction()).getValue();
+             deleteInstruction(list, myHandle);
+             return value;
+        }else if (myHandle.getInstruction() instanceof ICONST){
+             Number value = ((ICONST) myHandle.getInstruction()).getValue();
+             deleteInstruction(list, myHandle);
+             return value;
+        }else if (myHandle.getInstruction() instanceof FCONST){
+             Number value = ((FCONST) myHandle.getInstruction()).getValue();
+             deleteInstruction(list, myHandle);
+             return value;
+        }else if (myHandle.getInstruction() instanceof LCONST){
+            Number value = ((LCONST) myHandle.getInstruction()).getValue();
+            deleteInstruction(list, myHandle);
+            return value;
+        }else if (myHandle.getInstruction() instanceof DCONST){
+            Number value = ((DCONST) myHandle.getInstruction()).getValue();
+            deleteInstruction(list, myHandle);
+            return value;
+        }else if (myHandle.getInstruction() instanceof IADD){
+
+        }
     }
 
-
+    private void deleteInstruction(InstructionList list, InstructionHandle handle){
+        list.redirectBranches(handle, handle.getPrev());
+        list.delete(handle);
+    }
 
     //optimize all methods
 	public void optimize()
