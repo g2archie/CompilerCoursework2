@@ -46,13 +46,23 @@ public class ConstantFolder
         InstructionHandle handle = list.getStart();
 
         while (handle != null){
+            //-1~5 iconst
+            //-128 ~127 bipush
+            //-32768 ~ 32767 sipush
+            //-2147483648 ~ 2147483647 ldc (int, float and String)
+            //ldc2_w (long and double)
+
             if (handle.getInstruction() instanceof ArithmeticInstruction){
+            //unary and binary operators
 
             }else if(handle.getInstruction() instanceof StoreInstruction){
 
-            }else if(handle.getInstruction() instanceof IINC){
 
-            }else if(handle.getInstruction() instanceof NOP){
+            }else if(handle.getInstruction() instanceof IINC){
+                //i=i+1
+                //iinc or iinc_w
+                //up to 16bits[-32768,32767]
+
 
             }else{
 
@@ -64,6 +74,11 @@ public class ConstantFolder
         InstructionList myList = new InstructionList(myCode.getCode());
         cgen.replaceMethod(m, myMethod);
     }
+
+    private Number getValue(){
+
+    }
+
 
 
     //optimize all methods
