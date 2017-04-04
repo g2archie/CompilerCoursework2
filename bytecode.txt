@@ -1,3 +1,4 @@
+Part2: constant variable folding
 methodOne();
   	 0: bipush        42
          2: istore_1
@@ -16,7 +17,7 @@ methodOne();
         25: iadd
         26: iconst_3
         27: imul
-        28: istore        7
+        28: istore        7 
         30: iload         7
         32: sipush        1234
         35: iadd
@@ -48,7 +49,7 @@ methodThree();
         16: iconst_0
         17: return
 
-compiled：
+optimized:
 
 methodOne();
  	 0: ldc           #24                 // int 3610
@@ -58,7 +59,7 @@ methodTwo();
  	 0: ldc2_w        #27                 // double 1.0d
          3: dreturn
 
-methodThree()byb;
+methodThree();
 	 0: sipush        12345
          3: ldc           #2                  // int 54321
          5: if_icmple     12
@@ -66,3 +67,93 @@ methodThree()byb;
          9: goto          13
         12: iconst_0
         13: ireturn
+
+
+our constant variable folding:
+methodOne();
+  	 0: bipush        62
+         2: istore_1
+         3: iload_1
+         4: sipush        764
+         7: iadd
+         8: iconst_3
+         9: imul
+        10: istore_2
+        11: iload_2
+        12: sipush        1234
+        15: iadd
+        16: iload_1
+        17: isub
+        18: ireturn
+
+methodTwo();
+         0: ldc2_w        #2                  // double 0.67d
+         3: dstore_1
+         4: iconst_1
+         5: istore_3
+         6: dload_1
+         7: iload_3
+         8: i2d
+         9: dadd
+        10: dreturn
+
+methodThree();
+	 0: sipush        12345
+         3: istore_1
+         4: ldc           #4                  // int 54321
+         6: istore_2
+         7: iload_1
+         8: iload_2
+         9: if_icmple     16
+        12: iconst_1
+        13: goto          17
+        16: iconst_0
+        17: ireturn
+
+methodFour();
+  	 0: ldc2_w        #5                  // long 4835783423l
+         3: lstore_1
+         4: ldc2_w        #7                  // long 400000l
+         7: lstore_3
+         8: lload_1
+         9: lload_3
+        10: ladd
+        11: lstore        5
+        13: lload_1
+        14: lload_3
+        15: lcmp
+        16: ifle          23
+        19: iconst_1
+        20: goto          24
+        23: iconst_0
+        24: ireturn
+
+//part2里面的methods和之间的关联
+void optimizeMethod(); => safeInstructionDelete
+		       => handleStoreInstructions
+		       => getLastStaskPush
+
+Number getLastStackPush(); => safeInstructionDelete
+			   => binaryOps
+			   => convertNumber
+			   => stackChangingOp
+
+Number[] binaryOps(); => getLastStackPush
+Boolean handleStoreInstuctions(); 
+Number convertNumber();
+Boolean stackChangingOp();
+Void safeInstructionDelete();
+
+
+storeInstruction
+NOP
+ArithmeticInstruction
+IINC
+
+Load and store (e.g. aload_0, istore)
+Arithmetic and logic (e.g. ladd, fcmpl)
+Type conversion (e.g. i2b, d2i)
+Object creation and manipulation (new, putfield)
+Operand stack management (e.g. swap, dup2)
+Control transfer (e.g. ifeq, goto)
+Method invocation and return (e.g. invokespecial, areturn)
