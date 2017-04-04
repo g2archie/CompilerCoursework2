@@ -53,30 +53,35 @@ public class ConstantFolder
             //ldc2_w (long and double)
 
             if (handle.getInstruction() instanceof ArithmeticInstruction){
-            //unary and binary operators
+            //u如果找到unary或者binary运算字节码，则运算出结果
+            InstructionHandle change = handle;
+            handle = handle.getNext();
+
 
             }else if(handle.getInstruction() instanceof StoreInstruction){
-
+                //如果找到store相关的字节码，则往后找相应的load字节码，并且把load替换成push,把之前的store和push删掉
 
             }else if(handle.getInstruction() instanceof IINC){
-                //i=i+1
-                //iinc or iinc_w
-                //up to 16bits[-32768,32767]
+                //如果遇到增量字节码，则转换成普通的字节码（iinc，iinc_w）
 
 
             }else{
-
+                //向下遍历
             }
         }
 
+        //？？怎么替换的
+        list.setPositions(true);
+        mg.setMaxStack();
+        mg.setMaxLocals();
         Method myMethod = mg.getMethod();
-        Code myCode = myMethod.getCode();
-        InstructionList myList = new InstructionList(myCode.getCode());
         cgen.replaceMethod(m, myMethod);
     }
 
-    private Number getValue(){
-
+    private Number getValue(InstructionList list, InstructionHandle handle){
+         if (handle.getInstruction() instanceof BIPUSH){
+             Number value = ((BIPUSH) handle.getInstruction()).getValue();
+         }
     }
 
 
