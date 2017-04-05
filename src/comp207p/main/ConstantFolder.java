@@ -75,12 +75,12 @@ public class ConstantFolder
         cgen.replaceMethod(m, myMethod);
     }
 
-    private Number getValue(InstructionList list, InstructionHandle handle){
+    private Number getValue(InstructionList list, InstructionHandle handle, ConstantPoolGen cpgen){
         InstructionHandle myHandle = handle;
 
         //get values from bipush, sipush, ldc and ldc2_w
         //get values from integer, float, long and double constant
-        //get values from integer add, mul, div and sub
+        //get values from add, mul, div and sub
         if (myHandle.getInstruction() instanceof BIPUSH){
              Number value = ((BIPUSH) myHandle.getInstruction()).getValue();
              deleteInstruction(list, myHandle);
@@ -90,11 +90,11 @@ public class ConstantFolder
              deleteInstruction(list, myHandle);
              return value;
         }else if (myHandle.getInstruction() instanceof LDC){
-             Number value = ((LDC) myHandle.getInstruction()).getValue();
+             Number value = (Number) ((LDC) myHandle.getInstruction()).getValue(cpgen);
              deleteInstruction(list, myHandle);
              return value;
         }else if (myHandle.getInstruction() instanceof LDC2_W){
-             Number value = ((LDC2_W) myHandle.getInstruction()).getValue();
+             Number value = (Number) ((LDC2_W) myHandle.getInstruction()).getValue(cpgen);
              deleteInstruction(list, myHandle);
              return value;
         }else if (myHandle.getInstruction() instanceof ICONST){
@@ -114,13 +114,138 @@ public class ConstantFolder
             deleteInstruction(list, myHandle);
             return value;
         }else if (myHandle.getInstruction() instanceof IADD){
-
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (int) firstValue + (int) secondValue;
+        }else if (myHandle.getInstruction() instanceof ISUB){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (int) firstValue - (int) secondValue;
+        }else if (myHandle.getInstruction() instanceof IMUL){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (int) firstValue * (int) secondValue;
+        }else if (myHandle.getInstruction() instanceof IDIV){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (int) firstValue / (int) secondValue;
+        }else if (myHandle.getInstruction() instanceof FADD){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (float) firstValue + (float) secondValue;
+        }else if (myHandle.getInstruction() instanceof FSUB){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (float) firstValue - (float) secondValue;
+        }else if (myHandle.getInstruction() instanceof FSUB){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (float) firstValue - (float) secondValue;
+        }else if (myHandle.getInstruction() instanceof FMUL){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (float) firstValue * (float) secondValue;
+        }else if (myHandle.getInstruction() instanceof FDIV){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (float) firstValue / (float) secondValue;
+        }else if (myHandle.getInstruction() instanceof LADD){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (long) firstValue + (long) secondValue;
+        }else if (myHandle.getInstruction() instanceof LSUB){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (long) firstValue - (long) secondValue;
+        }else if (myHandle.getInstruction() instanceof LMUL){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (long) firstValue * (long) secondValue;
+        }else if (myHandle.getInstruction() instanceof LDIV){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (long) firstValue / (long) secondValue;
+        }else if (myHandle.getInstruction() instanceof DADD){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (double) firstValue + (double) secondValue;
+        }else if (myHandle.getInstruction() instanceof DSUB){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (double) firstValue - (double) secondValue;
+        }else if (myHandle.getInstruction() instanceof DMUL){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (double) firstValue * (double) secondValue;
+        }else if (myHandle.getInstruction() instanceof DDIV){
+            Number secondValue = getValue(list, myHandle.getPrev(), cpgen);
+            Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
+            deleteInstruction(list, myHandle);
+            return (double) firstValue / (double) secondValue;
+        }else if (myHandle.getInstruction() instanceof ConversionInstruction){
+            Number toChange = convert(myHandle,getValue(list, myHandle.getPrev(), cpgen));
+            deleteInstruction(list, myHandle);
+            return toChange;
         }
+        return null;
+    }
+
+    private Number convert(InstructionHandle handle, Number toChange){
+        //integer to float, double and long
+        //float to ...
+        //double to ...
+        //long to ...
+        if (handle.getInstruction() instanceof I2F){
+            return (float)(int) toChange;
+        }else if (handle.getInstruction() instanceof I2D){
+            return (double)(int) toChange;
+        }else if (handle.getInstruction() instanceof I2L){
+            return (long)(int) toChange;
+        }else if (handle.getInstruction() instanceof F2I){
+            return (int)(float) toChange;
+        }else if (handle.getInstruction() instanceof F2D){
+            return (double)(float) toChange;
+        }else if (handle.getInstruction() instanceof F2L){
+            return (long)(float) toChange;
+        }else if (handle.getInstruction() instanceof D2I){
+            return (int)(double) toChange;
+        }else if (handle.getInstruction() instanceof D2F){
+            return (float)(double) toChange;
+        }else if (handle.getInstruction() instanceof D2L){
+            return (long)(double) toChange;
+        }else if (handle.getInstruction() instanceof L2I){
+            return (int)(long) toChange;
+        }else if (handle.getInstruction() instanceof L2D){
+            return (double)(long) toChange;
+        }else if (handle.getInstruction() instanceof L2F){
+            return (float)(long) toChange;
+        }
+        return null;
     }
 
     private void deleteInstruction(InstructionList list, InstructionHandle handle){
         list.redirectBranches(handle, handle.getPrev());
-        list.delete(handle);
+        try{
+            list.delete(handle);
+        }catch (Exception targetLostException){
+
+        }
     }
 
     //optimize all methods
