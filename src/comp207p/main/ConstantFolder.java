@@ -58,13 +58,21 @@ public class ConstantFolder
 
             }else if(handle.getInstruction() instanceof IINC){
                 //********如果遇到增量字节码，则转换成普通的字节码（iinc，iinc_w）
-                InstructionHandle change = handle;
-                handle = handle.getNext();
+                int id = ((IINC) handle.getInstruction()).getIndex();
+                int inc = ((IINC) handle.getInstruction()).getIncrement();
 
+                list.insert(handle, new BIPUSH((byte) inc));
+                InstructionHandle bipush = handle.getPrev();
+                list.insert(handle, new ILOAD(id));
+                list.insert(handle, new IADD());
+                list.insert(handle, new ISTORE(id));
+                list.redirectBranches(handle, bipush);
+                try{list.delete(handle);} catch (Exception targetLostException){}
+                list.setPositions();
             }else{
                 //*********向下遍历
-                InstructionHandle change = handle;
                 handle = handle.getNext();
+                list.setPositions();
             }
         }
 
