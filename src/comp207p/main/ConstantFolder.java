@@ -38,12 +38,13 @@ public class ConstantFolder
         MethodGen mg = new MethodGen(m.getAccessFlags(), m.getReturnType(), m.getArgumentTypes(), null, m.getName(), cgen.getClassName(), list, cpgen);
         InstructionHandle handle = list.getStart();
 
+
         while (handle != null){
-            //-1~5 iconst
-            //-128 ~127 bipush
-            //-32768 ~ 32767 sipush
-            //-2147483648 ~ 2147483647 ldc (int, float and String)
-            //ldc2_w (long and double)
+//            -1~5 iconst
+//            -128 ~127 bipush
+//            -32768 ~ 32767 sipush
+//            -2147483648 ~ 2147483647 ldc (int, float and String)
+//            ldc2_w (long and double)
 
             if (handle.getInstruction() instanceof ArithmeticInstruction){
             //******如果找到unary或者binary运算字节码，则运算出结果
@@ -66,8 +67,8 @@ public class ConstantFolder
                 list.insert(handle, new ILOAD(id));
                 list.insert(handle, new IADD());
                 list.insert(handle, new ISTORE(id));
-                list.redirectBranches(handle, bipush);
-                try{list.delete(handle);} catch (Exception targetLostException){}
+                deleteInstruction(list,handle);
+                handle = bipush;
                 list.setPositions();
             }else{
                 //*********向下遍历
@@ -248,7 +249,6 @@ public class ConstantFolder
     }
 
     private void deleteInstruction(InstructionList list, InstructionHandle handle){
-        list.redirectBranches(handle, handle.getPrev());
         try{
             list.delete(handle);
         }catch (Exception targetLostException){
