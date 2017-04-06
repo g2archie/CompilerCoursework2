@@ -77,12 +77,10 @@ public class ConstantFolder
                     int value = (int) getValue(list, change.getPrev(), cpgen);
                     deleteInstruction(list, change.getPrev());
                     InstructionHandle toHandle = change.getNext();
+                    handle = toHandle.getNext();
                     deleteInstruction(list, change);
-                    int dd = 1;
+
                     while (toHandle != null){
-                        System.out.println(dd);
-                        System.out.println(toHandle);
-                        dd++;
                         int i;
                         if(toHandle.getInstruction() instanceof ILOAD){
                             i = ((ILOAD) toHandle.getInstruction()).getIndex();
@@ -94,7 +92,7 @@ public class ConstantFolder
                                 } else {
                                     list.insert(toHandle, new BIPUSH((byte) value));
                                 }
-                                handle = toHandle.getPrev();
+                                
                                 InstructionHandle toDelete = toHandle;
                                 toHandle = toHandle.getNext();
                                 deleteInstruction(list, toDelete);
@@ -106,12 +104,14 @@ public class ConstantFolder
                                 break;
                             }
                         }
+                        toHandle = toHandle.getNext();
                     }
                 }else if(handle.getInstruction() instanceof DSTORE){
                     int id = ((DSTORE) change.getInstruction()).getIndex();
                     double value = (double) getValue(list, change.getPrev(), cpgen);
                     deleteInstruction(list, change.getPrev());
                     InstructionHandle toHandle = change.getNext();
+                    handle = toHandle.getNext();
                     deleteInstruction(list, change);
 
                     while (toHandle != null){
@@ -120,8 +120,9 @@ public class ConstantFolder
                             i = ((DLOAD) toHandle.getInstruction()).getIndex();
                             if(i == id){
                                 list.insert(toHandle, new LDC2_W(cpgen.addDouble((double) value)));
-                                handle = toHandle.getPrev();
-                                deleteInstruction(list, toHandle);
+                                InstructionHandle toDelete = toHandle;
+                                toHandle = toHandle.getNext();
+                                deleteInstruction(list, toDelete);
                                 list.setPositions();
                             }
                         }else if(toHandle.getInstruction() instanceof DSTORE){
@@ -137,6 +138,7 @@ public class ConstantFolder
                     float value = (float) getValue(list, change.getPrev(), cpgen);
                     deleteInstruction(list, change.getPrev());
                     InstructionHandle toHandle = change.getNext();
+                    handle = toHandle.getNext();
                     deleteInstruction(list, change);
 
                     while (toHandle != null){
@@ -145,8 +147,9 @@ public class ConstantFolder
                             i = ((FLOAD) toHandle.getInstruction()).getIndex();
                             if(i == id){
                                 list.insert(toHandle, new LDC(cpgen.addFloat((float) value)));
-                                handle = toHandle.getPrev();
-                                deleteInstruction(list, toHandle);
+                                InstructionHandle toDelete = toHandle;
+                                toHandle = toHandle.getNext();
+                                deleteInstruction(list, toDelete);
                                 list.setPositions();
                             }
                         }else if(toHandle.getInstruction() instanceof FSTORE){
@@ -162,6 +165,7 @@ public class ConstantFolder
                     long value = (long) getValue(list, change.getPrev(), cpgen);
                     deleteInstruction(list, change.getPrev());
                     InstructionHandle toHandle = change.getNext();
+                    handle = toHandle.getNext();
                     deleteInstruction(list, change);
 
                     while (toHandle != null){
@@ -170,8 +174,9 @@ public class ConstantFolder
                             i = ((LLOAD) toHandle.getInstruction()).getIndex();
                             if(i == id){
                                 list.insert(toHandle, new LDC2_W(cpgen.addLong((long) value)));
-                                handle = toHandle.getPrev();
-                                deleteInstruction(list, toHandle);
+                                InstructionHandle toDelete = toHandle;
+                                toHandle = toHandle.getNext();
+                                deleteInstruction(list, toDelete);
                                 list.setPositions();
                             }
                         }else if(toHandle.getInstruction() instanceof LSTORE){
