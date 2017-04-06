@@ -57,7 +57,6 @@ public class Main extends SimpleFileVisitor<Path> {
         String fname = file.toString();
         if(fname.endsWith(".class") && !fname.endsWith("Main.class") && !fname.endsWith("ConstantFolder.class")){
             ConstantFolder cf = new ConstantFolder(file.toString());
-            cf.optimize();
             Path rel = Paths.get(inputRoot).relativize(file);
             cf.write(Paths.get(outputRoot, rel.toString()).toAbsolutePath().toString());
         }
