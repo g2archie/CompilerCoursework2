@@ -37,23 +37,40 @@ public class ConstantFolder
         InstructionList list = new InstructionList(code.getCode());
         MethodGen mg = new MethodGen(m.getAccessFlags(), m.getReturnType(), m.getArgumentTypes(), null, m.getName(), cgen.getClassName(), list, cpgen);
         InstructionHandle handle = list.getStart();
-
-
+        
+        
         while (handle != null){
+
 //            -1~5 iconst
 //            -128 ~127 bipush
 //            -32768 ~ 32767 sipush
 //            -2147483648 ~ 2147483647 ldc (int, float and String)
 //            ldc2_w (long and double)
-
+            
             if (handle.getInstruction() instanceof ArithmeticInstruction){
             //******如果找到unary或者binary运算字节码，则运算出结果
             InstructionHandle change = handle;
             handle = handle.getNext();
-
-
+//            Number value = getValue(list, change, cpgen);
+//
+//            if (value instanceof Integer){
+//                list.insert(handle, new LDC(cpgen.addInteger((int) value)));
+//                list.setPositions();
+//            }else if (value instanceof Float) {
+//                list.insert(handle, new LDC(cpgen.addFloat((float) value)));
+//                list.setPositions();
+//            }else if (value instanceof Double) {
+//                list.insert(handle, new LDC(cpgen.addDouble((double) value)));
+//                list.setPositions();
+//            }else if (value instanceof Long) {
+//                list.insert(handle, new LDC(cpgen.addLong((long) value)));
+//                list.setPositions();
+//            }
+//
             }else if(handle.getInstruction() instanceof StoreInstruction){
                 //******如果找到store相关的字节码，则往后找相应的load字节码，并且把load替换成push,把之前的store和push删掉
+
+
                 InstructionHandle change = handle;
                 handle = handle.getNext();
 
@@ -258,7 +275,7 @@ public class ConstantFolder
 
     //optimize all methods
 	public void optimize()
-	{
+	    {
 		ClassGen cgen = new ClassGen(original);
 		ConstantPoolGen cpgen = cgen.getConstantPool();
 
@@ -268,7 +285,7 @@ public class ConstantFolder
         	optimizedMethod(cgen, cpgen, m);
 		}
 
-		this.optimized = gen.getJavaClass();
+		this.optimized = cgen.getJavaClass();
 	}
 	
 	public void write(String optimisedFilePath)
