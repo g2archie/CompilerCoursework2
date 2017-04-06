@@ -30,50 +30,159 @@ public class ConstantFolder
 			e.printStackTrace();
 		}
 	}
-
+    
+    
 	//main structure
     private void optimizedMethod(ClassGen cgen, ConstantPoolGen cpgen, Method m){
         Code code = m.getCode();
         InstructionList list = new InstructionList(code.getCode());
         MethodGen mg = new MethodGen(m.getAccessFlags(), m.getReturnType(), m.getArgumentTypes(), null, m.getName(), cgen.getClassName(), list, cpgen);
         InstructionHandle handle = list.getStart();
-        
-        
-        while (handle != null){
+        int b = 1;
 
+        while (handle != null){
 //            -1~5 iconst
 //            -128 ~127 bipush
 //            -32768 ~ 32767 sipush
 //            -2147483648 ~ 2147483647 ldc (int, float and String)
 //            ldc2_w (long and double)
-            
+            System.out.println(list);
+            System.out.println(b);
+            b++;
             if (handle.getInstruction() instanceof ArithmeticInstruction){
             //******如果找到unary或者binary运算字节码，则运算出结果
             InstructionHandle change = handle;
             handle = handle.getNext();
-//            Number value = getValue(list, change, cpgen);
-//
-//            if (value instanceof Integer){
-//                list.insert(handle, new LDC(cpgen.addInteger((int) value)));
-//                list.setPositions();
-//            }else if (value instanceof Float) {
-//                list.insert(handle, new LDC(cpgen.addFloat((float) value)));
-//                list.setPositions();
-//            }else if (value instanceof Double) {
-//                list.insert(handle, new LDC(cpgen.addDouble((double) value)));
-//                list.setPositions();
-//            }else if (value instanceof Long) {
-//                list.insert(handle, new LDC(cpgen.addLong((long) value)));
-//                list.setPositions();
-//            }
-//
+            Number value = getValue(list, change, cpgen);
+            if (value instanceof Integer){
+                    list.insert(handle, new LDC(cpgen.addInteger((int) value)));
+                list.setPositions();
+            }else if (value instanceof Float) {
+                list.insert(handle, new LDC(cpgen.addFloat((float) value)));
+                list.setPositions();
+            }else if (value instanceof Double) {
+                list.insert(handle, new LDC2_W(cpgen.addDouble((double) value)));
+                list.setPositions();
+            }else if (value instanceof Long) {
+                list.insert(handle, new LDC2_W(cpgen.addLong((long) value)));
+                list.setPositions();
+            }
             }else if(handle.getInstruction() instanceof StoreInstruction){
                 //******如果找到store相关的字节码，则往后找相应的load字节码，并且把load替换成push,把之前的store和push删掉
-
-
+              
                 InstructionHandle change = handle;
-                handle = handle.getNext();
+                
+                if(change.getInstruction() instanceof ISTORE){
+                    int id = ((ISTORE) change.getInstruction()).getIndex();
+                    int value = (int) getValue(list, change.getPrev(), cpgen);
+                    deleteInstruction(list, change.getPrev());
+                    InstructionHandle toHandle = change.getNext();
+                    deleteInstruction(list, change);
+                    int dd = 1;
+                    while (toHandle != null){
+                        System.out.println(dd);
+                        System.out.println(toHandle);
+                        dd++;
+                        int i;
+                        if(toHandle.getInstruction() instanceof ILOAD){
+                            i = ((ILOAD) toHandle.getInstruction()).getIndex();
+                            if(i == id){
+                                if (value > 32767 || value < -32768) {
+                                    list.insert(toHandle, new LDC(cpgen.addInteger(value)));
+                                } else if (value < -128 || value > 127) {
+                                    list.insert(toHandle, new SIPUSH((short) value));
+                                } else {
+                                    list.insert(toHandle, new BIPUSH((byte) value));
+                                }
+                                handle = toHandle.getPrev();
+                                InstructionHandle toDelete = toHandle;
+                                toHandle = toHandle.getNext();
+                                deleteInstruction(list, toDelete);
+                                list.setPositions();
+                            }
+                        }else if(toHandle.getInstruction() instanceof ISTORE){
+                            i = ((ISTORE) toHandle.getInstruction()).getIndex();
+                            if(i == id){
+                                break;
+                            }
+                        }
+                    }
+                }else if(handle.getInstruction() instanceof DSTORE){
+                    int id = ((DSTORE) change.getInstruction()).getIndex();
+                    double value = (double) getValue(list, change.getPrev(), cpgen);
+                    deleteInstruction(list, change.getPrev());
+                    InstructionHandle toHandle = change.getNext();
+                    deleteInstruction(list, change);
 
+                    while (toHandle != null){
+                        int i;
+                        if(toHandle.getInstruction() instanceof DLOAD){
+                            i = ((DLOAD) toHandle.getInstruction()).getIndex();
+                            if(i == id){
+                                list.insert(toHandle, new LDC2_W(cpgen.addDouble((double) value)));
+                                handle = toHandle.getPrev();
+                                deleteInstruction(list, toHandle);
+                                list.setPositions();
+                            }
+                        }else if(toHandle.getInstruction() instanceof DSTORE){
+                            i = ((DSTORE) toHandle.getInstruction()).getIndex();
+                            if(i == id){
+                                break;
+                            }
+                        }
+                        toHandle = toHandle.getNext();
+                    }
+                }else if(handle.getInstruction() instanceof FSTORE){
+                    int id = ((FSTORE) change.getInstruction()).getIndex();
+                    float value = (float) getValue(list, change.getPrev(), cpgen);
+                    deleteInstruction(list, change.getPrev());
+                    InstructionHandle toHandle = change.getNext();
+                    deleteInstruction(list, change);
+
+                    while (toHandle != null){
+                        int i;
+                        if(toHandle.getInstruction() instanceof FLOAD){
+                            i = ((FLOAD) toHandle.getInstruction()).getIndex();
+                            if(i == id){
+                                list.insert(toHandle, new LDC(cpgen.addFloat((float) value)));
+                                handle = toHandle.getPrev();
+                                deleteInstruction(list, toHandle);
+                                list.setPositions();
+                            }
+                        }else if(toHandle.getInstruction() instanceof FSTORE){
+                            i = ((FSTORE) toHandle.getInstruction()).getIndex();
+                            if(i == id){
+                                break;
+                            }
+                        }
+                        toHandle = toHandle.getNext();
+                    }
+                }else if(handle.getInstruction() instanceof LSTORE){
+                    int id = ((LSTORE) change.getInstruction()).getIndex();
+                    long value = (long) getValue(list, change.getPrev(), cpgen);
+                    deleteInstruction(list, change.getPrev());
+                    InstructionHandle toHandle = change.getNext();
+                    deleteInstruction(list, change);
+
+                    while (toHandle != null){
+                        int i;
+                        if(toHandle.getInstruction() instanceof LLOAD){
+                            i = ((LLOAD) toHandle.getInstruction()).getIndex();
+                            if(i == id){
+                                list.insert(toHandle, new LDC2_W(cpgen.addLong((long) value)));
+                                handle = toHandle.getPrev();
+                                deleteInstruction(list, toHandle);
+                                list.setPositions();
+                            }
+                        }else if(toHandle.getInstruction() instanceof LSTORE){
+                            i = ((LSTORE) toHandle.getInstruction()).getIndex();
+                            if(i == id){
+                                break;
+                            }
+                        }
+                        toHandle = toHandle.getNext();
+                    }
+                }
             }else if(handle.getInstruction() instanceof IINC){
                 //********如果遇到增量字节码，则转换成普通的字节码（iinc，iinc_w）
                 int id = ((IINC) handle.getInstruction()).getIndex();
