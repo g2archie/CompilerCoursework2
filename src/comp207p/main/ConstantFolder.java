@@ -41,7 +41,6 @@ public class ConstantFolder
         
         while(firstHandle != null){
             if(firstHandle.getInstruction() instanceof IINC){
-                //********如果遇到增量字节码，则转换成普通的字节码（iinc，iinc_w）
                 int id = ((IINC) firstHandle.getInstruction()).getIndex();
                 int inc = ((IINC) firstHandle.getInstruction()).getIncrement();
                 
@@ -67,7 +66,6 @@ public class ConstantFolder
 //            ldc2_w (long and double)
 
             if (handle.getInstruction() instanceof ArithmeticInstruction){
-                //******如果找到unary或者binary运算字节码，则运算出结果
                 InstructionHandle change = handle;
                 handle = handle.getNext();
                 if(!(change.getPrev().getInstruction() instanceof LoadInstruction) && !(change.getPrev().getPrev().getInstruction() instanceof LoadInstruction)){
@@ -281,7 +279,6 @@ public class ConstantFolder
                 deleteInstruction(list, toHandle);
                 
             }else if(handle.getInstruction() instanceof StoreInstruction){
-                //******如果找到store相关的字节码，则往后找相应的load字节码，并且把load替换成push,把之前的store和push删掉
                 
                 InstructionHandle change = handle;
                 if(change.getPrev().getInstruction() instanceof ArithmeticInstruction || change.getPrev().getInstruction() instanceof LoadInstruction){
@@ -447,7 +444,6 @@ public class ConstantFolder
                 }
                                    
             }else{
-                //*********向下遍历
                 handle = handle.getNext();
                 list.setPositions();
             }
@@ -461,9 +457,6 @@ public class ConstantFolder
                     if(findGoto.getNext().getInstruction() instanceof GotoInstruction){
                         IfInstruction change = (IfInstruction)check.getInstruction();
                         change.setTarget(findGoto.getNext().getNext());
-                        
-//                        BranchInstruction change2 = (BranchInstruction)findGoto.getNext().getInstruction();
-//                        change2.setTarget(check);
                         list.setPositions();
                     }
                     findGoto = findGoto.getNext();
