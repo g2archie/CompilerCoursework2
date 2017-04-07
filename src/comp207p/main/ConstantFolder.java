@@ -31,7 +31,6 @@ public class ConstantFolder
 		}
 	}
     
-    
 	//main structure
     private void optimizedMethod(ClassGen cgen, ConstantPoolGen cpgen, Method m){
         Code code = m.getCode();
@@ -60,37 +59,207 @@ public class ConstantFolder
             }
         }
         
-        int b = 1;
-        
         while (handle != null){
 //            -1~5 iconst
 //            -128 ~127 bipush
 //            -32768 ~ 32767 sipush
 //            -2147483648 ~ 2147483647 ldc (int, float and String)
 //            ldc2_w (long and double)
-            System.out.println(list);
-            System.out.println(b);
-            System.out.println(handle);
-            System.out.println(b);
-            b++;
+
             if (handle.getInstruction() instanceof ArithmeticInstruction){
-            //******如果找到unary或者binary运算字节码，则运算出结果
-            InstructionHandle change = handle;
-            handle = handle.getNext();
-            Number value = getValue(list, change, cpgen);
-            if (value instanceof Integer){
-                    list.insert(handle, new LDC(cpgen.addInteger((int) value)));
-                list.setPositions();
-            }else if (value instanceof Float) {
-                list.insert(handle, new LDC(cpgen.addFloat((float) value)));
-                list.setPositions();
-            }else if (value instanceof Double) {
-                list.insert(handle, new LDC2_W(cpgen.addDouble((double) value)));
-                list.setPositions();
-            }else if (value instanceof Long) {
-                list.insert(handle, new LDC2_W(cpgen.addLong((long) value)));
-                list.setPositions();
-            }
+                //******如果找到unary或者binary运算字节码，则运算出结果
+                InstructionHandle change = handle;
+                handle = handle.getNext();
+                if(!(change.getPrev().getInstruction() instanceof LoadInstruction) && !(change.getPrev().getPrev().getInstruction() instanceof LoadInstruction)){
+                    Number value = getValue(list, change, cpgen);
+                    if (value instanceof Integer){
+                        list.insert(handle, new LDC(cpgen.addInteger((int) value)));
+                        list.setPositions();
+                    }else if (value instanceof Float) {
+                        list.insert(handle, new LDC(cpgen.addFloat((float) value)));
+                        list.setPositions();
+                    }else if (value instanceof Double) {
+                        list.insert(handle, new LDC2_W(cpgen.addDouble((double) value)));
+                        list.setPositions();
+                    }else if (value instanceof Long) {
+                        list.insert(handle, new LDC2_W(cpgen.addLong((long) value)));
+                        list.setPositions();
+                    }
+                }
+            }else if(handle.getInstruction() instanceof IFNE){
+                InstructionHandle toHandle = handle;
+                deleteInstruction(list, toHandle.getPrev());
+                Number secondValue = getValue(list, toHandle.getPrev(), cpgen);
+                Number firstValue = getValue(list, toHandle.getPrev(), cpgen);
+                
+                if(secondValue instanceof Long && firstValue instanceof Long){
+                    long s = (long) secondValue;
+                    long f = (long) firstValue;
+                    if(s == f){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                }else if(secondValue instanceof Double && firstValue instanceof Double){
+                    double s = (double) secondValue;
+                    double f = (double) firstValue;
+                    if(s == f){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                }else if(secondValue instanceof Float && firstValue instanceof Float) {
+                    float s = (float) secondValue;
+                    float f = (float) firstValue;
+                    if(s == f){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                }
+                handle = handle.getNext();
+                deleteInstruction(list, toHandle);
+                
+            }else if(handle.getInstruction() instanceof IFLE){
+                InstructionHandle toHandle = handle;
+                deleteInstruction(list, toHandle.getPrev());
+                Number secondValue = getValue(list, toHandle.getPrev(), cpgen);
+                Number firstValue = getValue(list, toHandle.getPrev(), cpgen);
+                
+                if(secondValue instanceof Long && firstValue instanceof Long){
+                    long s = (long) secondValue;
+                    long f = (long) firstValue;
+                    if(s <= f){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                }else if(secondValue instanceof Double && firstValue instanceof Double){
+                    double s = (double) secondValue;
+                    double f = (double) firstValue;
+                    if(s <= f){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                }else if(secondValue instanceof Float && firstValue instanceof Float) {
+                    float s = (float) secondValue;
+                    float f = (float) firstValue;
+                    if(s <= f){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                }
+                handle = handle.getNext();
+                deleteInstruction(list, toHandle);
+
+            }else if(handle.getInstruction() instanceof IFGE){
+                InstructionHandle toHandle = handle;
+                deleteInstruction(list, toHandle.getPrev());
+                Number secondValue = getValue(list, toHandle.getPrev(), cpgen);
+                Number firstValue = getValue(list, toHandle.getPrev(), cpgen);
+                
+                if(secondValue instanceof Long && firstValue instanceof Long){
+                    long s = (long) secondValue;
+                    long f = (long) firstValue;
+                    if(s >= f){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                }else if(secondValue instanceof Double && firstValue instanceof Double){
+                    double s = (double) secondValue;
+                    double f = (double) firstValue;
+                    if(s >= f){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                }else if(secondValue instanceof Float && firstValue instanceof Float) {
+                    float s = (float) secondValue;
+                    float f = (float) firstValue;
+                    if(s >= f){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                }
+                handle = handle.getNext();
+                deleteInstruction(list, toHandle);
+                
+            }else if(handle.getInstruction() instanceof IF_ICMPLE){
+                InstructionHandle toHandle = handle;
+                if(!(toHandle.getNext().getNext().getInstruction() instanceof GotoInstruction)){
+                    handle = handle.getNext();
+                }else{
+                    int secondValue = (int) getValue(list, toHandle.getPrev(), cpgen);
+                    int firstValue = (int) getValue(list, toHandle.getPrev(), cpgen);
+                    if(secondValue <= firstValue){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list,toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                    handle = handle.getNext();
+                    deleteInstruction(list, toHandle);
+                }
+                
+            }else if(handle.getInstruction() instanceof IF_ICMPGE){
+                InstructionHandle toHandle = handle;
+                if(!(toHandle.getNext().getNext().getInstruction() instanceof GotoInstruction)){
+                    handle = handle.getNext();
+                }else{
+                    int secondValue = (int) getValue(list, toHandle.getPrev(), cpgen);
+                    int firstValue = (int) getValue(list, toHandle.getPrev(), cpgen);
+                    if(secondValue >= firstValue){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list,toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                    handle = handle.getNext();
+                    deleteInstruction(list, toHandle);
+                }
+
+            }else if(handle.getInstruction() instanceof IF_ICMPNE){
+                InstructionHandle toHandle = handle;
+                if(!(toHandle.getNext().getNext().getInstruction() instanceof GotoInstruction)){
+                    handle = handle.getNext();
+                }else{
+                    int secondValue = (int) getValue(list, toHandle.getPrev(), cpgen);
+                    int firstValue = (int) getValue(list, toHandle.getPrev(), cpgen);
+                    if(secondValue == firstValue){
+                        deleteInstruction(list, toHandle.getNext().getNext());
+                        deleteInstruction(list,toHandle.getNext().getNext());
+                    }else{
+                        deleteInstruction(list, toHandle.getNext());
+                        deleteInstruction(list, toHandle.getNext());
+                    }
+                    handle = handle.getNext();
+                    deleteInstruction(list, toHandle);
+                }
+                
             }else if(handle.getInstruction() instanceof ConversionInstruction){
                 InstructionHandle toHandle = handle;
                 Number toChange = convert(toHandle,getValue(list, toHandle.getPrev(), cpgen));
@@ -113,169 +282,196 @@ public class ConstantFolder
                 
             }else if(handle.getInstruction() instanceof StoreInstruction){
                 //******如果找到store相关的字节码，则往后找相应的load字节码，并且把load替换成push,把之前的store和push删掉
-              
-                InstructionHandle change = handle;
                 
-                if(change.getInstruction() instanceof ISTORE){
-                    int id = ((ISTORE) change.getInstruction()).getIndex();
-                    int value = (int) getValue(list, change.getPrev(), cpgen);
-
-                    InstructionHandle toHandle = change.getNext();
-                    InstructionHandle nextHandle = toHandle;
-
-                    if(!(nextHandle.getInstruction() instanceof ILOAD)){
-                        handle = nextHandle;
+                InstructionHandle change = handle;
+                if(change.getPrev().getInstruction() instanceof ArithmeticInstruction || change.getPrev().getInstruction() instanceof LoadInstruction){
+                    handle = handle.getNext();
+                }else{
+                    if(handle.getNext().getNext().getNext().getInstruction() instanceof IfInstruction && !(handle.getNext().getNext().getNext().getNext().getNext().getInstruction() instanceof GotoInstruction)){
+                        handle = handle.getNext();
                     }else{
-                        while((nextHandle.getInstruction() instanceof ILOAD)){
-                            nextHandle = nextHandle.getNext();
-                            handle = nextHandle;
-                        }
-                    }
-                    deleteInstruction(list, change);
-
-                    while (toHandle != null){
-                        int i;
-                        if(toHandle.getInstruction() instanceof ILOAD){
-                            i = ((ILOAD) toHandle.getInstruction()).getIndex();
-                            if(i == id){
-                                if (value > 32767 || value < -32768) {
-                                    list.insert(toHandle, new LDC(cpgen.addInteger(value)));
-                                } else if (value < -128 || value > 127) {
-                                    list.insert(toHandle, new SIPUSH((short) value));
-                                } else {
-                                    list.insert(toHandle, new BIPUSH((byte) value));
+                        if(change.getInstruction() instanceof ISTORE){
+                            int id = ((ISTORE) change.getInstruction()).getIndex();
+                            int value = (int) getValue(list, change.getPrev(), cpgen);
+                            
+                            InstructionHandle toHandle = change.getNext();
+                            InstructionHandle nextHandle = toHandle;
+                            
+                            if(!(nextHandle.getInstruction() instanceof ILOAD)){
+                                handle = nextHandle;
+                            }else{
+                                while((nextHandle.getInstruction() instanceof ILOAD)){
+                                    nextHandle = nextHandle.getNext();
+                                    handle = nextHandle;
                                 }
-                                
-                                InstructionHandle toDelete = toHandle;
+                            }
+                            deleteInstruction(list, change);
+                            
+                            while (toHandle != null){
+                                int i;
+                                if(toHandle.getInstruction() instanceof ILOAD){
+                                    i = ((ILOAD) toHandle.getInstruction()).getIndex();
+                                    if(i == id){
+                                        if (value > 32767 || value < -32768) {
+                                            list.insert(toHandle, new LDC(cpgen.addInteger(value)));
+                                        } else if (value < -128 || value > 127) {
+                                            list.insert(toHandle, new SIPUSH((short) value));
+                                        } else {
+                                            list.insert(toHandle, new BIPUSH((byte) value));
+                                        }
+                                        
+                                        InstructionHandle toDelete = toHandle;
+                                        toHandle = toHandle.getNext();
+                                        deleteInstruction(list, toDelete);
+                                        list.setPositions();
+                                    }
+                                }else if(toHandle.getInstruction() instanceof ISTORE){
+                                    i = ((ISTORE) toHandle.getInstruction()).getIndex();
+                                    if(i == id){
+                                        break;
+                                    }
+                                }
                                 toHandle = toHandle.getNext();
-                                deleteInstruction(list, toDelete);
-                                list.setPositions();
                             }
-                        }else if(toHandle.getInstruction() instanceof ISTORE){
-                            i = ((ISTORE) toHandle.getInstruction()).getIndex();
-                            if(i == id){
-                                break;
+                        }else if(handle.getInstruction() instanceof DSTORE){
+                            int id = ((DSTORE) change.getInstruction()).getIndex();
+                            double value = (double) getValue(list, change.getPrev(), cpgen);
+                            deleteInstruction(list, change.getPrev());
+                            InstructionHandle toHandle = change.getNext();
+                            InstructionHandle nextHandle = toHandle;
+                            
+                            if(!(nextHandle.getInstruction() instanceof DLOAD)){
+                                handle = nextHandle;
+                            }else{
+                                while((nextHandle.getInstruction() instanceof DLOAD)){
+                                    nextHandle = nextHandle.getNext();
+                                    handle = nextHandle;
+                                }
                             }
-                        }
-                        toHandle = toHandle.getNext();
-                    }
-                }else if(handle.getInstruction() instanceof DSTORE){
-                    int id = ((DSTORE) change.getInstruction()).getIndex();
-                    double value = (double) getValue(list, change.getPrev(), cpgen);
-                    deleteInstruction(list, change.getPrev());
-                    InstructionHandle toHandle = change.getNext();
-                    InstructionHandle nextHandle = toHandle;
-
-                    if(!(nextHandle.getInstruction() instanceof DLOAD)){
-                        handle = nextHandle;
-                    }else{
-                        while((nextHandle.getInstruction() instanceof DLOAD)){
-                            nextHandle = nextHandle.getNext();
-                            handle = nextHandle;
-                        }
-                    }
-                    deleteInstruction(list, change);
-
-                    while (toHandle != null){
-                        int i;
-                        if(toHandle.getInstruction() instanceof DLOAD){
-                            i = ((DLOAD) toHandle.getInstruction()).getIndex();
-                            if(i == id){
-                                list.insert(toHandle, new LDC2_W(cpgen.addDouble((double) value)));
-                                InstructionHandle toDelete = toHandle;
+                            deleteInstruction(list, change);
+                            
+                            while (toHandle != null){
+                                int i;
+                                if(toHandle.getInstruction() instanceof DLOAD){
+                                    i = ((DLOAD) toHandle.getInstruction()).getIndex();
+                                    if(i == id){
+                                        list.insert(toHandle, new LDC2_W(cpgen.addDouble((double) value)));
+                                        InstructionHandle toDelete = toHandle;
+                                        toHandle = toHandle.getNext();
+                                        deleteInstruction(list, toDelete);
+                                        list.setPositions();
+                                    }
+                                }else if(toHandle.getInstruction() instanceof DSTORE){
+                                    i = ((DSTORE) toHandle.getInstruction()).getIndex();
+                                    if(i == id){
+                                        break;
+                                    }
+                                }
                                 toHandle = toHandle.getNext();
-                                deleteInstruction(list, toDelete);
-                                list.setPositions();
                             }
-                        }else if(toHandle.getInstruction() instanceof DSTORE){
-                            i = ((DSTORE) toHandle.getInstruction()).getIndex();
-                            if(i == id){
-                                break;
+                        }else if(handle.getInstruction() instanceof FSTORE){
+                            int id = ((FSTORE) change.getInstruction()).getIndex();
+                            float value = (float) getValue(list, change.getPrev(), cpgen);
+                            deleteInstruction(list, change.getPrev());
+                            InstructionHandle toHandle = change.getNext();
+                            InstructionHandle nextHandle = toHandle;
+                            
+                            if(!(nextHandle.getInstruction() instanceof FLOAD)){
+                                handle = nextHandle;
+                            }else{
+                                while((nextHandle.getInstruction() instanceof FLOAD)){
+                                    nextHandle = nextHandle.getNext();
+                                    handle = nextHandle;
+                                }
                             }
-                        }
-                        toHandle = toHandle.getNext();
-                    }
-                }else if(handle.getInstruction() instanceof FSTORE){
-                    int id = ((FSTORE) change.getInstruction()).getIndex();
-                    float value = (float) getValue(list, change.getPrev(), cpgen);
-                    deleteInstruction(list, change.getPrev());
-                    InstructionHandle toHandle = change.getNext();
-                    InstructionHandle nextHandle = toHandle;
-                    
-                    if(!(nextHandle.getInstruction() instanceof FLOAD)){
-                        handle = nextHandle;
-                    }else{
-                        while((nextHandle.getInstruction() instanceof FLOAD)){
-                            nextHandle = nextHandle.getNext();
-                            handle = nextHandle;
-                        }
-                    }
-                    
-                    deleteInstruction(list, change);
-
-                    while (toHandle != null){
-                        int i;
-                        if(toHandle.getInstruction() instanceof FLOAD){
-                            i = ((FLOAD) toHandle.getInstruction()).getIndex();
-                            if(i == id){
-                                list.insert(toHandle, new LDC(cpgen.addFloat((float) value)));
-                                InstructionHandle toDelete = toHandle;
+                            
+                            deleteInstruction(list, change);
+                            
+                            while (toHandle != null){
+                                int i;
+                                if(toHandle.getInstruction() instanceof FLOAD){
+                                    i = ((FLOAD) toHandle.getInstruction()).getIndex();
+                                    if(i == id){
+                                        list.insert(toHandle, new LDC(cpgen.addFloat((float) value)));
+                                        InstructionHandle toDelete = toHandle;
+                                        toHandle = toHandle.getNext();
+                                        deleteInstruction(list, toDelete);
+                                        list.setPositions();
+                                    }
+                                }else if(toHandle.getInstruction() instanceof FSTORE){
+                                    i = ((FSTORE) toHandle.getInstruction()).getIndex();
+                                    if(i == id){
+                                        break;
+                                    }
+                                }
                                 toHandle = toHandle.getNext();
-                                deleteInstruction(list, toDelete);
-                                list.setPositions();
                             }
-                        }else if(toHandle.getInstruction() instanceof FSTORE){
-                            i = ((FSTORE) toHandle.getInstruction()).getIndex();
-                            if(i == id){
-                                break;
+                        }else if(handle.getInstruction() instanceof LSTORE){
+                            int id = ((LSTORE) change.getInstruction()).getIndex();
+                            long value = (long) getValue(list, change.getPrev(), cpgen);
+                            deleteInstruction(list, change.getPrev());
+                            InstructionHandle toHandle = change.getNext();
+                            InstructionHandle nextHandle = toHandle;
+                            
+                            if(!(nextHandle.getInstruction() instanceof LLOAD)){
+                                handle = nextHandle;
+                            }else{
+                                while((nextHandle.getInstruction() instanceof LLOAD)){
+                                    nextHandle = nextHandle.getNext();
+                                    handle = nextHandle;
+                                }
                             }
-                        }
-                        toHandle = toHandle.getNext();
-                    }
-                }else if(handle.getInstruction() instanceof LSTORE){
-                    int id = ((LSTORE) change.getInstruction()).getIndex();
-                    long value = (long) getValue(list, change.getPrev(), cpgen);
-                    deleteInstruction(list, change.getPrev());
-                    InstructionHandle toHandle = change.getNext();
-                    InstructionHandle nextHandle = toHandle;
-
-                    if(!(nextHandle.getInstruction() instanceof LLOAD)){
-                        handle = nextHandle;
-                    }else{
-                        while((nextHandle.getInstruction() instanceof LLOAD)){
-                            nextHandle = nextHandle.getNext();
-                            handle = nextHandle;
-                        }
-                    }
-                    deleteInstruction(list, change);
-
-                    while (toHandle != null){
-                        int i;
-                        if(toHandle.getInstruction() instanceof LLOAD){
-                            i = ((LLOAD) toHandle.getInstruction()).getIndex();
-                            if(i == id){
-                                list.insert(toHandle, new LDC2_W(cpgen.addLong((long) value)));
-                                InstructionHandle toDelete = toHandle;
+                            deleteInstruction(list, change);
+                            
+                            while (toHandle != null){
+                                int i;
+                                if(toHandle.getInstruction() instanceof LLOAD){
+                                    i = ((LLOAD) toHandle.getInstruction()).getIndex();
+                                    if(i == id){
+                                        list.insert(toHandle, new LDC2_W(cpgen.addLong((long) value)));
+                                        InstructionHandle toDelete = toHandle;
+                                        toHandle = toHandle.getNext();
+                                        deleteInstruction(list, toDelete);
+                                        list.setPositions();
+                                    }
+                                }else if(toHandle.getInstruction() instanceof LSTORE){
+                                    i = ((LSTORE) toHandle.getInstruction()).getIndex();
+                                    if(i == id){
+                                        break;
+                                    }
+                                }
                                 toHandle = toHandle.getNext();
-                                deleteInstruction(list, toDelete);
-                                list.setPositions();
-                            }
-                        }else if(toHandle.getInstruction() instanceof LSTORE){
-                            i = ((LSTORE) toHandle.getInstruction()).getIndex();
-                            if(i == id){
-                                break;
                             }
                         }
-                        toHandle = toHandle.getNext();
                     }
                 }
+                                   
             }else{
                 //*********向下遍历
                 handle = handle.getNext();
                 list.setPositions();
             }
         }
-
+        
+        InstructionHandle check = list.getStart();
+        while(check != null){
+            if(check.getInstruction() instanceof IF_ICMPGE || check.getInstruction() instanceof IF_ICMPLE || check.getInstruction() instanceof IF_ICMPNE){
+                InstructionHandle findGoto = check;
+                while(!(findGoto.getInstruction() instanceof GotoInstruction)){
+                    if(findGoto.getNext().getInstruction() instanceof GotoInstruction){
+                        IfInstruction change = (IfInstruction)check.getInstruction();
+                        change.setTarget(findGoto.getNext().getNext());
+                        
+//                        BranchInstruction change2 = (BranchInstruction)findGoto.getNext().getInstruction();
+//                        change2.setTarget(check);
+                        list.setPositions();
+                    }
+                    findGoto = findGoto.getNext();
+                }
+            }
+            check = check.getNext();
+        }
+        
         list.setPositions(true);
 
         mg.setMaxStack();
