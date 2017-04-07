@@ -38,8 +38,30 @@ public class ConstantFolder
         InstructionList list = new InstructionList(code.getCode());
         MethodGen mg = new MethodGen(m.getAccessFlags(), m.getReturnType(), m.getArgumentTypes(), null, m.getName(), cgen.getClassName(), list, cpgen);
         InstructionHandle handle = list.getStart();
+        InstructionHandle firstHandle = list.getStart();
+        
+        while(firstHandle != null){
+            if(firstHandle.getInstruction() instanceof IINC){
+                //********如果遇到增量字节码，则转换成普通的字节码（iinc，iinc_w）
+                int id = ((IINC) firstHandle.getInstruction()).getIndex();
+                int inc = ((IINC) firstHandle.getInstruction()).getIncrement();
+                
+                list.insert(firstHandle, new BIPUSH((byte) inc));
+                InstructionHandle bipush = handle.getPrev();
+                list.insert(firstHandle, new ILOAD(id));
+                list.insert(firstHandle, new IADD());
+                list.insert(firstHandle, new ISTORE(id));
+                deleteInstruction(list,firstHandle);
+                firstHandle = bipush;
+                list.setPositions();
+            }else{
+                firstHandle = firstHandle.getNext();
+                list.setPositions();
+            }
+        }
+        
         int b = 1;
-
+        
         while (handle != null){
 //            -1~5 iconst
 //            -128 ~127 bipush
@@ -47,6 +69,8 @@ public class ConstantFolder
 //            -2147483648 ~ 2147483647 ldc (int, float and String)
 //            ldc2_w (long and double)
             System.out.println(list);
+            System.out.println(b);
+            System.out.println(handle);
             System.out.println(b);
             b++;
             if (handle.getInstruction() instanceof ArithmeticInstruction){
@@ -67,6 +91,26 @@ public class ConstantFolder
                 list.insert(handle, new LDC2_W(cpgen.addLong((long) value)));
                 list.setPositions();
             }
+            }else if(handle.getInstruction() instanceof ConversionInstruction){
+                InstructionHandle toHandle = handle;
+                Number toChange = convert(toHandle,getValue(list, toHandle.getPrev(), cpgen));
+                
+                if (toChange instanceof Integer){
+                    list.insert(toHandle, new LDC(cpgen.addInteger((int) toChange)));
+                    list.setPositions();
+                }else if (toChange instanceof Float) {
+                    list.insert(toHandle, new LDC(cpgen.addFloat((float) toChange)));
+                    list.setPositions();
+                }else if (toChange instanceof Double) {
+                    list.insert(toHandle, new LDC2_W(cpgen.addDouble((double) toChange)));
+                    list.setPositions();
+                }else if (toChange instanceof Long) {
+                    list.insert(toHandle, new LDC2_W(cpgen.addLong((long) toChange)));
+                    list.setPositions();
+                }
+                handle = toHandle.getPrev();
+                deleteInstruction(list, toHandle);
+                
             }else if(handle.getInstruction() instanceof StoreInstruction){
                 //******如果找到store相关的字节码，则往后找相应的load字节码，并且把load替换成push,把之前的store和push删掉
               
@@ -75,9 +119,18 @@ public class ConstantFolder
                 if(change.getInstruction() instanceof ISTORE){
                     int id = ((ISTORE) change.getInstruction()).getIndex();
                     int value = (int) getValue(list, change.getPrev(), cpgen);
-                    deleteInstruction(list, change.getPrev());
+
                     InstructionHandle toHandle = change.getNext();
-                    handle = toHandle.getNext();
+                    InstructionHandle nextHandle = toHandle;
+
+                    if(!(nextHandle.getInstruction() instanceof ILOAD)){
+                        handle = nextHandle;
+                    }else{
+                        while((nextHandle.getInstruction() instanceof ILOAD)){
+                            nextHandle = nextHandle.getNext();
+                            handle = nextHandle;
+                        }
+                    }
                     deleteInstruction(list, change);
 
                     while (toHandle != null){
@@ -111,7 +164,16 @@ public class ConstantFolder
                     double value = (double) getValue(list, change.getPrev(), cpgen);
                     deleteInstruction(list, change.getPrev());
                     InstructionHandle toHandle = change.getNext();
-                    handle = toHandle.getNext();
+                    InstructionHandle nextHandle = toHandle;
+
+                    if(!(nextHandle.getInstruction() instanceof DLOAD)){
+                        handle = nextHandle;
+                    }else{
+                        while((nextHandle.getInstruction() instanceof DLOAD)){
+                            nextHandle = nextHandle.getNext();
+                            handle = nextHandle;
+                        }
+                    }
                     deleteInstruction(list, change);
 
                     while (toHandle != null){
@@ -138,7 +200,17 @@ public class ConstantFolder
                     float value = (float) getValue(list, change.getPrev(), cpgen);
                     deleteInstruction(list, change.getPrev());
                     InstructionHandle toHandle = change.getNext();
-                    handle = toHandle.getNext();
+                    InstructionHandle nextHandle = toHandle;
+                    
+                    if(!(nextHandle.getInstruction() instanceof FLOAD)){
+                        handle = nextHandle;
+                    }else{
+                        while((nextHandle.getInstruction() instanceof FLOAD)){
+                            nextHandle = nextHandle.getNext();
+                            handle = nextHandle;
+                        }
+                    }
+                    
                     deleteInstruction(list, change);
 
                     while (toHandle != null){
@@ -165,7 +237,16 @@ public class ConstantFolder
                     long value = (long) getValue(list, change.getPrev(), cpgen);
                     deleteInstruction(list, change.getPrev());
                     InstructionHandle toHandle = change.getNext();
-                    handle = toHandle.getNext();
+                    InstructionHandle nextHandle = toHandle;
+
+                    if(!(nextHandle.getInstruction() instanceof LLOAD)){
+                        handle = nextHandle;
+                    }else{
+                        while((nextHandle.getInstruction() instanceof LLOAD)){
+                            nextHandle = nextHandle.getNext();
+                            handle = nextHandle;
+                        }
+                    }
                     deleteInstruction(list, change);
 
                     while (toHandle != null){
@@ -188,19 +269,6 @@ public class ConstantFolder
                         toHandle = toHandle.getNext();
                     }
                 }
-            }else if(handle.getInstruction() instanceof IINC){
-                //********如果遇到增量字节码，则转换成普通的字节码（iinc，iinc_w）
-                int id = ((IINC) handle.getInstruction()).getIndex();
-                int inc = ((IINC) handle.getInstruction()).getIncrement();
-
-                list.insert(handle, new BIPUSH((byte) inc));
-                InstructionHandle bipush = handle.getPrev();
-                list.insert(handle, new ILOAD(id));
-                list.insert(handle, new IADD());
-                list.insert(handle, new ISTORE(id));
-                deleteInstruction(list,handle);
-                handle = bipush;
-                list.setPositions();
             }else{
                 //*********向下遍历
                 handle = handle.getNext();
@@ -209,6 +277,7 @@ public class ConstantFolder
         }
 
         list.setPositions(true);
+
         mg.setMaxStack();
         mg.setMaxLocals();
         Method myMethod = mg.getMethod();
@@ -338,10 +407,6 @@ public class ConstantFolder
             Number firstValue = getValue(list, myHandle.getPrev(), cpgen);
             deleteInstruction(list, myHandle);
             return (double) firstValue / (double) secondValue;
-        }else if (myHandle.getInstruction() instanceof ConversionInstruction){
-            Number toChange = convert(myHandle,getValue(list, myHandle.getPrev(), cpgen));
-            deleteInstruction(list, myHandle);
-            return toChange;
         }
         return null;
     }
@@ -392,6 +457,7 @@ public class ConstantFolder
 	    {
 		ClassGen cgen = new ClassGen(original);
 		ConstantPoolGen cpgen = cgen.getConstantPool();
+        cgen.setMajor(50);
 
 		// Implement your optimization here
         Method[] methods = cgen.getMethods();
